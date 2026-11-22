@@ -95,3 +95,57 @@
     (setf (element-attr a "href") "w")
     (ok (string= "x" (cdr (first given))))
     (ok (string= "w" (element-attr a "href")))))
+
+;;; SVG camelCase names (issue: viewBox -> viewbox)
+
+(deftest canonical-names
+  (ok (string= "viewBox" (canonical-attribute-name "viewbox")))
+  (ok (string= "viewBox" (canonical-attribute-name "VIEWBOX")))
+  (ok (string= "preserveAspectRatio" (canonical-attribute-name :preserveaspectratio)))
+  (ok (string= "gradientUnits" (canonical-attribute-name "gradientUnits")))
+  (ok (string= "class" (canonical-attribute-name "CLASS")))
+  (ok (string= "data-x" (canonical-attribute-name :data-x)))
+  (ok (string= "linearGradient" (canonical-element-name "LINEARGRADIENT")))
+  (ok (string= "clipPath" (canonical-element-name :clippath)))
+  (ok (string= "div" (canonical-element-name "DIV"))))
+
+(defun %svg-doc ()
+  (make-html-document
+   :children (list (make-html-element
+                    "svg"
+                    :attributes '(("viewBox" . "0 0 10 10")
+                                  ("preserveAspectRatio" . "xMidYMid meet"))
+                    :children (list (make-html-element
+                                     "lineargradient"
+                                     :attributes '(("id" . "g")
+                                                   ("gradientUnits" . "userSpaceOnUse"))))))))
+
+(deftest svg-names-serialize-with-case
+  (let ((s (serialize (%svg-doc))))
+    (ok (string= (concatenate 'string
+                              "<svg viewBox=\"0 0 10 10\" preserveAspectRatio=\"xMidYMid meet\">"
+                              "<linearGradient id=\"g\" gradientUnits=\"userSpaceOnUse\"></linearGradient>"
+                              "</svg>")
+                 s))))
+
+(deftest svg-names-round-trip-through-parse
+  (let* ((text (serialize (%svg-doc)))
+         (again (parse text)))
+    (ok (string= text (serialize again)))
+    (let ((svg (first (select again "svg"))))
+      (ok (equal '("viewBox" "preserveAspectRatio")
+                 (mapcar #'car (html-element-attributes svg))))
+      (ok (string= "linearGradient" (html-element-name (first (html-element-children svg))))))
+    (ok (select again "lineargradient") "select is case-insensitive"))
+  ;; Lowercased input (what a lowercasing serializer wrote) is restored.
+  (let ((svg (first (select (parse "<svg viewbox=\"0 0 1 1\"><lineargradient gradientunits=\"x\"></lineargradient></svg>") "svg"))))
+    (ok (string= "viewBox" (car (first (html-element-attributes svg)))))
+    (ok (string= "gradientUnits"
+                 (car (first (html-element-attributes (first (html-element-children svg)))))))))
+
+(deftest setf-element-attr-svg-case
+  (let ((e (make-html-element "svg")))
+    (setf (element-attr e "VIEWBOX") "0 0 1 1")
+    (setf (element-attr e "ID") "x")
+    (ok (equal '(("viewBox" . "0 0 1 1") ("id" . "x")) (html-element-attributes e)))
+    (ok (string= "0 0 1 1" (element-attr e "viewbox")))))
