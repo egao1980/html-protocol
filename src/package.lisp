@@ -35,6 +35,8 @@
 
            #:make-html-document
            #:make-html-element
+           #:canonical-element-name
+           #:canonical-attribute-name
            #:document-root
            #:element-attr
            #:element-text

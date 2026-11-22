@@ -1,5 +1,5 @@
 (defsystem "html-protocol"
-  :version "0.1.1"
+  :version "0.1.2"
   :description "CLOS HTML document + parse/serialize + tiny CSS select (stack-html)"
   :author "egao1980"
   :license "MIT"
