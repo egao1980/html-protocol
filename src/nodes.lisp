@@ -74,9 +74,15 @@
 (defun (setf element-attr) (value element name)
   (let* ((key (string-downcase name))
          (cell (assoc key (html-element-attributes element) :test #'string-equal)))
-    (if cell
-        (setf (cdr cell) value)
-        (push (cons key value) (html-element-attributes element)))
+    ;; Non-destructive: the alist may be shared with the caller (or a literal).
+    ;; New attributes go at the end, so serialization keeps insertion order.
+    (setf (html-element-attributes element)
+          (if cell
+              (mapcar (lambda (pair)
+                        (if (eq pair cell) (cons (car pair) value) pair))
+                      (html-element-attributes element))
+              (append (html-element-attributes element)
+                      (list (cons key value)))))
     value))
 
 (defun element-text (node)

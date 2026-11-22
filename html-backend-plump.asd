@@ -1,5 +1,5 @@
 (defsystem "html-backend-plump"
-  :version "0.1.0"
+  :version "0.1.1"
   :description "html-protocol backend — Shinmera plump (lenient HTML)"
   :author "egao1980"
   :license "MIT"

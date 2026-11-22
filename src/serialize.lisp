@@ -19,7 +19,7 @@
                (t (write-char ch out))))))
 
 (defun %write-attrs (element stream)
-  (dolist (pair (reverse (html-element-attributes element)))
+  (dolist (pair (html-element-attributes element))
     (format stream " ~A=\"~A\""
             (car pair)
             (%escape-attr (cdr pair)))))
@@ -34,7 +34,7 @@
     (html-comment
      (format stream "<!--~A-->" (html-comment-data node)))
     (html-text
-     (write-string (html-text-data node) stream))
+     (write-string (%escape-text (html-text-data node)) stream))
     (html-element
      (let ((name (html-element-name node))
            (opaque (opaque-text-element-p node)))
@@ -50,8 +50,6 @@
             (cond
               ((and opaque (html-text-p child))
                (write-string (html-text-data child) stream))
-              ((html-text-p child)
-               (write-string (%escape-text (html-text-data child)) stream))
               (t
                (%serialize-node child stream))))
           (format stream "</~A>" name)))))))
